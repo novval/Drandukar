@@ -30,6 +30,7 @@
 #include "BLDC_controller.h"
 #include "rtwtypes.h"
 #include "comms.h"
+#include "EngineSound\EngineSound.h"
 
 #if defined(DEBUG_I2C_LCD) || defined(SUPPORT_LCD)
 #include "hd44780.h"
@@ -1530,6 +1531,7 @@ void saveConfig() {
 
 
 void poweroff(void) {
+	engineSoundStop();
   enable = 0;
   #if defined(DEBUG_SERIAL_USART2) || defined(DEBUG_SERIAL_USART3)
   printf("-- Motors disabled --\r\n");

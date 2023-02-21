@@ -8,7 +8,7 @@
 #include "EngineSound.h"
 #include "curves.h"
 //#include "core_cm3.h"
-#include "stm32f1xx_hal.h"
+//#include "stm32f1xx_hal.h"
 
 // for LED_PIN debug
 #include "defines.h"
@@ -18,10 +18,10 @@ extern InputStruct input2[INPUTS_NR];
 
 #define PROGMEM
 //#include "Engines\DefenderV8Start.h"
-//#include "Engines\ScaniaV8Start.h"
-//#include "Engines\ScaniaV8Idle.h"
-#include "Engines\UralV8Start.h"
-#include "Engines\1KhZ.h"
+#include "Engines\ScaniaV8Start.h"
+#include "Engines\ScaniaV8Idle.h"
+//#include "Engines\UralV8Start.h"
+//#include "Engines\1KhZ.h"
 //#include "Engines\UralV8Idle.h"
 //#include "Engines\chevyNovaV8.h"
 
@@ -35,6 +35,8 @@ static const int16_t minRpm = 0;		// always 0
 static const int8_t acc = 9; // Acceleration step per 5ms (9)
 static const int8_t dec = 6; // Deceleration step per 5ms (6)
 //* end of #include "settings.h"
+
+#define VOLUME_DECREASE		4
 
 #define SAMPLE_RATE			16000
 #define SAMPLE_BITS			8
@@ -96,7 +98,6 @@ void engineSoundStart(void)
 {
 	state = eStarting;
 	samplePos = 0;
-//	TIM3->ARR = SND_DEFAULT_ARR;
 	sampleRate = SND_DEFAULT_ARR;
 }
 
@@ -104,7 +105,6 @@ void engineSoundStop(void)
 {
 	state = eStopping;
 	samplePos = 0;
-//	TIM3->ARR = SND_DEFAULT_ARR;
 	sampleRate = SND_DEFAULT_ARR;
 }
 
@@ -112,91 +112,29 @@ void engineSoundSimulation(int16_t throttle)
 {
   static int16_t mappedThrottle = 0;
   static int16_t currentRpm = 0;
-  static unsigned long throtMillis = 0;
+//  static unsigned long throtMillis = 0;
 
-//	if (state != eRunning)
-//		return;
+	if (state != eRunning)
+		return;
 	
-  if (millis() > throtMillis){//5) { // Every 5ms
-    throtMillis = millis();
-
-if (state == eRunning) {
-		
-    // compute unlinear throttle curve
-    mappedThrottle = reMap(curveShifting, throttle / 2);
-    if (mappedThrottle + acc > currentRpm && state == eRunning) { // Accelerate engine
-      currentRpm += acc;
-      if (currentRpm > maxRpm)
+//  if (millis() > throtMillis){//5) { // Every 5ms
+//    throtMillis = millis();
+		// compute unlinear throttle curve
+		mappedThrottle = reMap(curveShifting, throttle / 2);
+		if (mappedThrottle + acc > currentRpm && state == eRunning) { // Accelerate engine
+			currentRpm += acc;
+			if (currentRpm > maxRpm)
 				currentRpm = maxRpm;
-    } else if (mappedThrottle - dec < currentRpm) { // Decelerate engine
-      currentRpm -= dec;
-      if (currentRpm < minRpm)
+		} else if (mappedThrottle - dec < currentRpm) { // Decelerate engine
+			currentRpm -= dec;
+			if (currentRpm < minRpm)
 				currentRpm = minRpm;
-    }
-    // Speed (sample rate) output
-    sampleRate = SystemCoreClock / (BASE_RATE + (long)(currentRpm * TOP_SPEED_MULTIPLIER));
+		}
+		// Speed (sample rate) output
+		sampleRate = SystemCoreClock / (BASE_RATE + (long)(currentRpm * TOP_SPEED_MULTIPLIER));
+  	printf("st=%d, id1=%5d, id1=%5d, thr=%4d, map=%4d, rpm=%4d, arr=%4d, smr=%5d\r\n", state, input2[0].raw, input2[1].raw, throttle, mappedThrottle, currentRpm, sampleRate, SystemCoreClock / sampleRate);
+//	}
 }
-		printf("st=%d, id1=%5d, id1=%5d, thr=%4d, map=%4d, rpm=%4d, arr=%4d, smr=%5d\r\n", state, input2[0].raw, input2[1].raw, throttle, mappedThrottle, currentRpm, sampleRate, SystemCoreClock / sampleRate);
-  }
-}
-
-
-//// This is the main sound playback interrupt, keep this nice and tight!! ------------------------------
-//ISR(TIMER1_COMPA_vect) {
-
-//  static float attenuator;  // Float required for finer granularity!
-
-//  switch (engineState) {
-
-//    case 0: // off ----
-//      OCR1A = fixedSmpleRate; // fixed sample rate (speed)!
-//      OCR2B = 0;
-//      if (engineOn) engineState = 1;
-//      break;
-
-//    case 1: // starting ----
-//      if (curStartSample >= start_length) { // Loop the sample
-//        curStartSample = 0;
-//        engineState = 2;
-//      }
-//      OCR1A = fixedSmpleRate; // fixed sample rate (speed)!
-//      OCR2B = pgm_read_byte(&start_data[curStartSample]);
-//      curStartSample++;
-//      break;
-
-//    case 2: // running ----
-//      if (curEngineSample >= idle_length) { // Loop the sample
-//        curEngineSample = 0;
-//        attenuator = 1;
-//      }
-//      OCR1A = currentSmpleRate; // variable sample rate (RPM)!
-//      OCR2B = pgm_read_byte(&idle_data[curEngineSample]);
-//      curEngineSample++;
-//      if (!engineOn) {
-//        engineState = 3;
-//      }
-//      break;
-
-//    case 3: // stopping ----
-//      if (curEngineSample >= idle_length) { // Loop the sample
-//        curEngineSample = 0;
-//      }
-
-//      OCR1A = fixedSmpleRate;
-//      //OCR1A = fixedSmpleRate * attenuator; // engine slowing down
-//      OCR2B = pgm_read_byte(&idle_data[curEngineSample]) / attenuator;
-//      curEngineSample++;
-//      attenuator += 0.001; // fade engine sound out 0.002
-//      if (attenuator >= 20) {  // 3 - 20
-//        engineOn = false;
-//        if (!engineOn) engineState = 0; // Important: ensure, that engine is off, before we go back to "starting"!!
-//      }
-//      break;
-
-//  } // end of switch case
-//}
-
-//void
 
 void TIM3_IRQHandler()
 {
@@ -212,17 +150,17 @@ void TIM3_IRQHandler()
 				samplePos = 0;
 				state = eRunning;
 			}
-			TIM4->CCR4 = start_data[samplePos++]>>4;
+			TIM4->CCR4 = start_data[samplePos++]>>VOLUME_DECREASE;
 			break;
 		case eRunning:
 			if (samplePos >= idle_length)
 				samplePos = 0;
-			TIM4->CCR4 = idle_data[samplePos++]>>4;
+			TIM4->CCR4 = idle_data[samplePos++]>>VOLUME_DECREASE;
 			break;
 		case eStopping:
 			if (samplePos >= idle_length)
 				samplePos = 0;
-			TIM4->CCR4 = (idle_data[samplePos++]>>4) / attenuator;
+			TIM4->CCR4 = (idle_data[samplePos++]>>VOLUME_DECREASE) / attenuator;
       attenuator += 0.001;
       if (attenuator >= 20) {  // 3 - 20
 				state = eStopped;
