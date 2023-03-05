@@ -774,5 +774,15 @@
 #endif
 // ############################# END OF VALIDATE SETTINGS ############################
 
+
+//*
+//* EngineSound
+//* 
+#define ENGINE_SOUND_USE        1           // 0 - Standard PCB without modifications. 1 - Modified PCB for engine sound | 0 - Стандартная плата без изменений.  1 - Доработанная плата для звука двигателя
+//*                                         // Note: The definitions below only matter if ENGINE_SOUND_USE = 1 | Примечание: Определения ниже имеют значение только если ENGINE_SOUND_USE = 1
+#define ENGINE_SOUND_ON         1           // 0 - Engine sound is off. 1 - Engine sound is on. | 0 - Звук двигателя выключен. 1 - Звук двигателя включен.
+#define BUZZER_ON_LED           1           // 0 - Buzzer is not used. 1 - Buzzer is connected to the LED. | 0 - Зуммер не используется. 1 - Зуммер подключен к светодиоду.
+//* End of EngineSound definition
+
 #endif
 

@@ -175,23 +175,22 @@ int main(void) {
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
   /* System interrupt init*/
   /* MemoryManagement_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(MemoryManagement_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(MemoryManagement_IRQn, 0, 0);
   /* BusFault_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(BusFault_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(BusFault_IRQn, 0, 0);
   /* UsageFault_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(UsageFault_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(UsageFault_IRQn, 0, 0);
   /* SVCall_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SVCall_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(SVCall_IRQn, 0, 0);
   /* DebugMonitor_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DebugMonitor_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(DebugMonitor_IRQn, 0, 0);
   /* PendSV_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(PendSV_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(PendSV_IRQn, 0, 0);
   /* SysTick_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(SysTick_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
   SystemClock_Config();
 
-  engineSoundInit();
   engineSoundStart();
 
   __HAL_RCC_DMA1_CLK_DISABLE();
@@ -209,7 +208,7 @@ int main(void) {
   HAL_ADC_Start(&hadc2);
 
   poweronMelody();
-  HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+  ledSet();
   
   int32_t board_temp_adcFixdt = adc_buffer.temp << 16;  // Fixed-point filter output initialized with current ADC converted to fixed-point
   int16_t board_temp_adcFilt  = adc_buffer.temp;
@@ -546,7 +545,7 @@ int main(void) {
     }
 
 
-    // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);                 // This is to measure the main() loop duration with an oscilloscope connected to LED_PIN
+    // ledToggle();                 // This is to measure the main() loop duration with an oscilloscope connected to LED_PIN
     // Update states
     inIdx_prev = inIdx;
     buzzerTimer_prev = buzzerTimer;

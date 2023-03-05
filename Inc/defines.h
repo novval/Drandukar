@@ -114,15 +114,24 @@
 // #define DCLINK_PULLUP 30000
 // #define DCLINK_PULLDOWN 1000
 
-#define LED_PIN GPIO_PIN_2
-#define LED_PORT GPIOB
+#if !(ENGINE_SOUND_USE)
+#define LED_PIN       GPIO_PIN_2
+#define LED_PORT      GPIOB
+#endif
 
+#if (ENGINE_SOUND_USE)
+#if (BUZZER_ON_LED)
+#define BUZZER_PIN       GPIO_PIN_2
+#define BUZZER_PORT      GPIOB
+#endif
+#else
 #if BOARD_VARIANT == 0
-#define BUZZER_PIN GPIO_PIN_4
-#define BUZZER_PORT GPIOA
+#define BUZZER_PIN    GPIO_PIN_4
+#define BUZZER_PORT   GPIOA
 #elif BOARD_VARIANT == 1
 #define BUZZER_PIN GPIO_PIN_13
 #define BUZZER_PORT GPIOC
+#endif
 #endif
 
 // UNUSED/REDUNDANT
@@ -267,6 +276,33 @@ void PWM_ISR_CH2_Callback(void);
 #define SWB_SET             (0x0600)   //  0000 0110 0000 0000
 #define SWC_SET             (0x1800)   //  0001 1000 0000 0000
 #define SWD_SET             (0x2000)   //  0010 0000 0000 0000
+
+// 
+inline static void buzzerToggle()
+{
+#if defined(BUZZER_PIN) && defined(BUZZER_PORT)
+	HAL_GPIO_TogglePin(BUZZER_PORT, BUZZER_PIN);
+#endif
+}
+inline static void buzzerSet()
+{
+#if defined(BUZZER_PIN) && defined(BUZZER_PORT)
+	HAL_GPIO_WritePin(BUZZER_PORT, BUZZER_PIN, GPIO_PIN_RESET);
+#endif
+}
+
+inline static void ledToggle()
+{
+#if defined(LED_PIN) && defined(LED_PORT)
+	HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
+#endif
+}
+inline static void ledSet()
+{
+#if defined(LED_PIN) && defined(LED_PORT)
+	HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
+#endif
+}
 
 #endif // DEFINES_H
 

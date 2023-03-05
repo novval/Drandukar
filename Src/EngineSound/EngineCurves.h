@@ -1,3 +1,5 @@
+#ifndef ENGINECURVES_H
+#define ENGINECURVES_H
 //
 // =======================================================================================================
 // NONLINEAR ARRAY FOR THROTTLE
@@ -39,3 +41,5 @@ int reMap(float pts[][2], int input)
   }
   return (rr);
 }
+
+#endif

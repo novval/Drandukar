@@ -4,49 +4,21 @@
 //*
 //* 2023-02-17
 //*
+#include "config.h"
 
+#if (ENGINE_SOUND_USE) && (ENGINE_SOUND_ON)
 #include "EngineSound.h"
-#include "curves.h"
-//#include "core_cm3.h"
-//#include "stm32f1xx_hal.h"
+#include "EngineCurves.h"
+#include "EngineSettings.h"
+#include "stm32f1xx_hal.h"
 
-// for LED_PIN debug
-#include "defines.h"
-
-#include "util.h"
-extern InputStruct input2[INPUTS_NR];
-
-#define PROGMEM
-//#include "Engines\DefenderV8Start.h"
-#include "Engines\ScaniaV8Start.h"
-#include "Engines\ScaniaV8Idle.h"
-//#include "Engines\UralV8Start.h"
-//#include "Engines\1KhZ.h"
-//#include "Engines\UralV8Idle.h"
-//#include "Engines\chevyNovaV8.h"
-
-//* from #include "settings.h"
-// Engine RPM range
-#define TOP_SPEED_MULTIPLIER 50 		// RPM multiplier: the bigger the number the larger the rev range, 20 - 50 is a good place to start (for most sounds = 30)
-static const int16_t maxRpm = 1023; // max. 1023
-static const int16_t minRpm = 0;		// always 0
-
-// Engine mass simulation
-static const int8_t acc = 9; // Acceleration step per 5ms (9)
-static const int8_t dec = 6; // Deceleration step per 5ms (6)
-//* end of #include "settings.h"
-
-#define VOLUME_DECREASE		4
-
-#define SAMPLE_RATE			16000
+#define SAMPLE_RATE			sampleRate
 #define SAMPLE_BITS			8
 
-#define PWM_DEFAULT_ARR		(1<<SAMPLE_BITS)
-#define PWM_DEFAULT_CRR		(1<<(SAMPLE_BITS-1))
 #define SND_DEFAULT_ARR		(SystemCoreClock / SAMPLE_RATE)
 
-extern const __IO uint32_t uwTick;
-#define millis()		uwTick
+//extern const __IO uint32_t uwTick;
+//#define millis()		uwTick
 
 static enum EngineState {
 	eStopped = 0,
@@ -54,66 +26,75 @@ static enum EngineState {
 	eRunning,
 	eStopping
 } state;
-static int samplePos;
-static int sampleRate;
 
-static void pwmTimerInit()
+static int16_t mappedThrottle;
+static int16_t currentRpm;
+//  static unsigned long throtMillis = 0;
+
+static void dacInit()
 {
-	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
-	RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-	
-	GPIOB->CRH &= ~(GPIO_CRH_CNF9);
-	GPIOB->CRH |= GPIO_CRH_CNF9_1 | GPIO_CRH_MODE9_1;
+	RCC->APB1ENR |= RCC_APB1ENR_DACEN;
 
-	TIM4->PSC = 0;
-	TIM4->ARR = PWM_DEFAULT_ARR;
-	TIM4->CCR4 = PWM_DEFAULT_CRR;
-	TIM4->CCER |= TIM_CCER_CC4E;
-	TIM4->CCMR2 |= TIM_CCMR2_OC4M_2 | TIM_CCMR2_OC4M_1;
-	TIM4->CR1 |= TIM_CR1_CEN;
+	GPIOA->CRL &= ~(GPIO_CRL_CNF4 | GPIO_CRL_MODE4);
+
+	DAC->CR = DAC_CR_EN1;
+}
+
+static void dmaInit()
+{
+	RCC->AHBENR |= RCC_AHBENR_DMA2EN;
+
+	DMA2_Channel3->CCR = 0;
+	DMA2_Channel3->CNDTR = startSampleCount;
+	DMA2_Channel3->CPAR = (uint32_t)&DAC->DHR8R1;
+	DMA2_Channel3->CMAR = (uint32_t)&startSamples;
+	DMA2_Channel3->CCR = DMA_CCR_PL_1 | DMA_CCR_PL_0 | DMA_CCR_MINC | DMA_CCR_DIR | DMA_CCR_TCIE | DMA_CCR_EN;
+
+  HAL_NVIC_SetPriority(DMA2_Channel3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Channel3_IRQn);
 }
 
 static void sndTimerInit()
 {
-	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
+	RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
 
-  HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
-	NVIC_EnableIRQ(TIM3_IRQn);
+  HAL_NVIC_SetPriority(TIM6_IRQn, 0, 0);
+	NVIC_EnableIRQ(TIM6_IRQn);
 	
-	TIM3->PSC = 0;
-	TIM3->ARR = SND_DEFAULT_ARR;
-	TIM3->DIER |= TIM_DIER_UIE;
-	TIM3->CR1 |= TIM_CR1_CEN;
+	TIM6->PSC = 0;
+	TIM6->ARR = SND_DEFAULT_ARR;
+	TIM6->DIER = TIM_DIER_UDE;
+	TIM6->CR2 = TIM_CR2_MMS_1;
+	TIM6->CR1 = TIM_CR1_ARPE;
 }
 
-void engineSoundInit(void)
+static void engineSoundInit(void)
 {
-	engineSoundStop();
 	state = eStopped;
-	pwmTimerInit();
+	dacInit();
+	dmaInit();
 	sndTimerInit();
 }
 
 void engineSoundStart(void)
 {
+	engineSoundInit();
 	state = eStarting;
-	samplePos = 0;
-	sampleRate = SND_DEFAULT_ARR;
+	mappedThrottle = 0;
+	currentRpm = 0;
+//	throtMillis = 0;
+	TIM6->ARR = SND_DEFAULT_ARR;
+	TIM6->CR1	|= TIM_CR1_CEN;
 }
 
 void engineSoundStop(void)
 {
 	state = eStopping;
-	samplePos = 0;
-	sampleRate = SND_DEFAULT_ARR;
+	TIM6->ARR = SND_DEFAULT_ARR;
 }
 
 void engineSoundSimulation(int16_t throttle)
 {
-  static int16_t mappedThrottle = 0;
-  static int16_t currentRpm = 0;
-//  static unsigned long throtMillis = 0;
-
 	if (state != eRunning)
 		return;
 	
@@ -121,7 +102,7 @@ void engineSoundSimulation(int16_t throttle)
 //    throtMillis = millis();
 		// compute unlinear throttle curve
 		mappedThrottle = reMap(curveShifting, throttle / 2);
-		if (mappedThrottle + acc > currentRpm && state == eRunning) { // Accelerate engine
+		if (mappedThrottle + acc > currentRpm) { // Accelerate engine
 			currentRpm += acc;
 			if (currentRpm > maxRpm)
 				currentRpm = maxRpm;
@@ -131,47 +112,24 @@ void engineSoundSimulation(int16_t throttle)
 				currentRpm = minRpm;
 		}
 		// Speed (sample rate) output
-		sampleRate = SystemCoreClock / (BASE_RATE + (long)(currentRpm * TOP_SPEED_MULTIPLIER));
-  	printf("st=%d, id1=%5d, id1=%5d, thr=%4d, map=%4d, rpm=%4d, arr=%4d, smr=%5d\r\n", state, input2[0].raw, input2[1].raw, throttle, mappedThrottle, currentRpm, sampleRate, SystemCoreClock / sampleRate);
+		int sampleRate = SystemCoreClock / (SAMPLE_RATE + (long)(currentRpm * TOP_SPEED_MULTIPLIER));
+		TIM6->ARR = sampleRate;
+  	printf("st=%d, thr=%4d, map=%4d, rpm=%4d, arr=%4d, smr=%5d\r\n", state, throttle, mappedThrottle, currentRpm, sampleRate, SystemCoreClock / sampleRate);
 //	}
 }
 
-void TIM3_IRQHandler()
+void DMA2_Channel3_IRQHandler()
 {
-	HAL_GPIO_WritePin(LED_PORT, LED_PIN, GPIO_PIN_SET);
-
-  static float attenuator = 1;
-
-	switch (state) {
-		case eStopped:
-			break;
-		case eStarting:
-			if (samplePos >= start_length) {
-				samplePos = 0;
-				state = eRunning;
-			}
-			TIM4->CCR4 = start_data[samplePos++]>>VOLUME_DECREASE;
-			break;
-		case eRunning:
-			if (samplePos >= idle_length)
-				samplePos = 0;
-			TIM4->CCR4 = idle_data[samplePos++]>>VOLUME_DECREASE;
-			break;
-		case eStopping:
-			if (samplePos >= idle_length)
-				samplePos = 0;
-			TIM4->CCR4 = (idle_data[samplePos++]>>VOLUME_DECREASE) / attenuator;
-      attenuator += 0.001;
-      if (attenuator >= 20) {  // 3 - 20
-				state = eStopped;
-				//TIM4->CCR4 = PWM_DEFAULT_CRR;
-			}
-      break;
-	}
-
-	TIM3->ARR = sampleRate;
-	
-	TIM3->SR &= ~TIM_SR_UIF;
-
-	HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
+	DMA2->IFCR = DMA_IFCR_CTCIF3;
+	DMA2_Channel3->CCR = 0;
+	DMA2_Channel3->CNDTR = sampleCount;
+	DMA2_Channel3->CMAR = (uint32_t)&samples;
+	DMA2_Channel3->CCR = DMA_CCR_PL_1 | DMA_CCR_PL_0 | DMA_CCR_MINC | DMA_CCR_DIR | DMA_CCR_CIRC | DMA_CCR_EN;
+	state = eRunning;
 }
+#else
+void engineSoundInit(void) {}
+void engineSoundStart(void) {}
+void engineSoundStop(void) {}
+void engineSoundSimulation(int16_t throttle) {}
+#endif

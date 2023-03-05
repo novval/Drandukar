@@ -87,8 +87,8 @@ static int32_t batVoltageFixdt  = (400 * BAT_CELLS * BAT_CALIB_ADC) / BAT_CALIB_
 void DMA1_Channel1_IRQHandler(void) {
 
   DMA1->IFCR = DMA_IFCR_CTCIF1;
-  // HAL_GPIO_WritePin(LED_PORT, LED_PIN, 1);
-  // HAL_GPIO_TogglePin(LED_PORT, LED_PIN);
+  // ledSet();
+  // ledToggle()
 
   if(offsetcount < 2000) {  // calibrate ADC offsets
     offsetcount++;
@@ -140,10 +140,10 @@ void DMA1_Channel1_IRQHandler(void) {
       }
     }
     if (buzzerTimer % buzzerFreq == 0 && (buzzerIdx <= buzzerCount || buzzerCount == 0)) {
-      HAL_GPIO_TogglePin(BUZZER_PORT, BUZZER_PIN);
+      buzzerToggle();
     }
   } else if (buzzerPrev) {
-      HAL_GPIO_WritePin(BUZZER_PORT, BUZZER_PIN, GPIO_PIN_RESET);
+      buzzerSet();
       buzzerPrev = 0;
   }
 

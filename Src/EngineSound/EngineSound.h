@@ -1,11 +1,8 @@
-#ifndef ENGINESOUND__H
-#define ENGINESOUND__H
+#ifndef ENGINESOUND_H
+#define ENGINESOUND_H
 
-#include "stm32f103xe.h"
-
-void engineSoundInit(void);
 void engineSoundStart(void);
 void engineSoundStop(void);
-void engineSoundSimulation(int16_t throttle);
+void engineSoundSimulation(short throttle);
 
 #endif
