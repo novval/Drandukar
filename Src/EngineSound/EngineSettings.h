@@ -112,6 +112,11 @@ const char dec = 6; // Deceleration step per 5ms (6)
 
 //* ========================================================================================================================================================================================
 
-
+#if !defined(ENGINESOUNDSTARTDATA_H)
+#error "Select engine start. | Выберите старт двигателя."
+#endif
+#if !defined(ENGINESOUNDIDLEDATA_H)
+#error "Select engine idling. | Выберите холостой ход двигателя."
+#endif
 
 #endif
