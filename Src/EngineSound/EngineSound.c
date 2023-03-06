@@ -12,7 +12,7 @@
 #include "EngineSettings.h"
 #include "stm32f1xx_hal.h"
 
-#define SAMPLE_RATE			sampleRate
+#define SAMPLE_RATE			idleSampleRate
 #define SAMPLE_BITS			8
 
 #define SND_DEFAULT_ARR		(SystemCoreClock / SAMPLE_RATE)
@@ -122,8 +122,8 @@ void DMA2_Channel3_IRQHandler()
 {
 	DMA2->IFCR = DMA_IFCR_CTCIF3;
 	DMA2_Channel3->CCR = 0;
-	DMA2_Channel3->CNDTR = sampleCount;
-	DMA2_Channel3->CMAR = (uint32_t)&samples;
+	DMA2_Channel3->CNDTR = idleSampleCount;
+	DMA2_Channel3->CMAR = (uint32_t)&idleSamples;
 	DMA2_Channel3->CCR = DMA_CCR_PL_1 | DMA_CCR_PL_0 | DMA_CCR_MINC | DMA_CCR_DIR | DMA_CCR_CIRC | DMA_CCR_EN;
 	state = eRunning;
 }
