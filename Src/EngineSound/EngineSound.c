@@ -114,7 +114,7 @@ void engineSoundSimulation(int16_t throttle)
 		// Speed (sample rate) output
 		int sampleRate = SystemCoreClock / (SAMPLE_RATE + (long)(currentRpm * TOP_SPEED_MULTIPLIER));
 		TIM6->ARR = sampleRate;
-  	printf("st=%d, thr=%4d, map=%4d, rpm=%4d, arr=%4d, smr=%5d\r\n", state, throttle, mappedThrottle, currentRpm, sampleRate, SystemCoreClock / sampleRate);
+//  	printf("st=%d, thr=%4d, map=%4d, rpm=%4d, arr=%4d, smr=%5d\r\n", state, throttle, mappedThrottle, currentRpm, sampleRate, SystemCoreClock / sampleRate);
 //	}
 }
 
@@ -127,9 +127,4 @@ void DMA2_Channel3_IRQHandler()
 	DMA2_Channel3->CCR = DMA_CCR_PL_1 | DMA_CCR_PL_0 | DMA_CCR_MINC | DMA_CCR_DIR | DMA_CCR_CIRC | DMA_CCR_EN;
 	state = eRunning;
 }
-#else
-void engineSoundInit(void) {}
-void engineSoundStart(void) {}
-void engineSoundStop(void) {}
-void engineSoundSimulation(int16_t throttle) {}
 #endif
