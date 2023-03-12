@@ -1,4 +1,35 @@
-# hoverboard-firmware-hack-FOC
+# Добавление звука двигателя.  
+Основано на версии Drandukar-1.1 от [@s_tavern](https://t.me/hover_ru ), которая является модификацией версии [hoverboard-firmware-hack-FOC](#hoverboard-firmware-hack-FOC) от [EFeru](https://github.com/EFeru) [hoverboard-firmware-hack-FOC](https://github.com/EFeru/hoverboard-firmware-hack-FOR).
+Идея и звуки двигателя взяты у [TheDIYGuy999](https://github.com/TheDIYGuy999), [Rc_Engine_Sound](https://github.com/TheDIYGuy999/Rc_Engine_Sound) и [Rc_Engine_Sound_ESP32](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32).  
+
+Звук выводится через DAC1 (PA4, к.20) к которому штатно, через транзистор подключен зуммер.
+Для вывода звука наружу необходимо доработать плату.
+Вариантов доработки несколько. Я использовал вариант с сохранением зуммера.
+Резистор R56 выпаял и припаял к резистору R20 (у светодиода). С освободившейся площадки "забрал" сигнал DAC1, в моем случае на припаянный на вырезанные площадки в полигоне на краю платы. На вторую освободившуюся площадку припаял перемычку проводком к перенесенному резистору R56. Фото ниже.
+![Modification1](/docs/pictures/enginesound_dac1_modification_1.JPG)
+![Modification2](/docs/pictures/enginesound_dac1_modification_2.JPG)
+Если после такой модификации зашить штатную прошивку, то звук зуммера будет слышан в динамике :))
+
+Если зуммер не нужен, то можно просто выпаять зуммер, диод рядом с зумером D1AR1, транзистор Q6. И запаять перемычку (зеленая стрелка) c базы на коллектор Q6.
+Сигнал звука теперь удобно брать припаявшись к контактаному отверстию зуммера (синяя стрелка).
+![Modification3](/docs/pictures/enginesound_dac1_modification_3.png).
+
+Настройки программы:
+Для включения/выключения звука в конце файла config.h есть определения:
+ENGINE_SOUND_USE : 0 - Стандартная плата без изменений.  1 - Доработанная плата для звука двигателя.
+ENGINE_SOUND_ON  : 0 - Звук двигателя выключен. 1 - Звук двигателя включен.
+BUZZER_ON_LED    : 0 - Зуммер не используется. 1 - Зуммер подключен к светодиоду.
+
+Выбор звука двигателя:
+В файле Src\EngineSound\EngineSettings.h необходимо раскомментировать одну строку содержащую "...Start.h" - звук запуска двигателя, и только одну строку содержащую "...Idle.h" - звук холостого хода двигателя.
+
+TODO:
+- не доделан звук выключения двигателя.
+- звуки сарта и хх-оборотв моторов не проверены, взяты как есть у [TheDIYGuy999](https://github.com/TheDIYGuy999).
+
+------------------------------------------------------------------------------------------------------------------
+
+## hoverboard-firmware-hack-FOC
 [![Build status](https://github.com/EFeru/hoverboard-firmware-hack-FOC/actions/workflows/build_on_commit.yml/badge.svg)](https://github.com/EFeru/hoverboard-firmware-hack-FOC/actions/workflows/build_on_commit.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=CU2SWN2XV9SCY&currency_code=EUR&source=url)
