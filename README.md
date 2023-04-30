@@ -1,4 +1,5 @@
 # Добавление звука двигателя.  
+На данный момент на выбор 45 звуков двигателей.  
 Основано на версии Drandukar-1.1 от [@s_tavern](https://t.me/hover_ru ), которая является модификацией версии [hoverboard-firmware-hack-FOC](#hoverboard-firmware-hack-FOC) от [EFeru](https://github.com/EFeru) [hoverboard-firmware-hack-FOC](https://github.com/EFeru/hoverboard-firmware-hack-FOR).
 Идея и звуки двигателя взяты у [TheDIYGuy999](https://github.com/TheDIYGuy999), [Rc_Engine_Sound](https://github.com/TheDIYGuy999/Rc_Engine_Sound) и [Rc_Engine_Sound_ESP32](https://github.com/TheDIYGuy999/Rc_Engine_Sound_ESP32).  
 
